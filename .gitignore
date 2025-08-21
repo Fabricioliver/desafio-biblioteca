@@ -416,3 +416,20 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# =========================================
+# Angular / Node
+# =========================================
+node_modules/
+dist/
+tmp/
+out-tsc/
+.angular/
+.angular/cache/
+coverage/
+
+# =========================================
+# Docker (dados persistidos)
+# =========================================
+**/pgdata/
+**/docker-data/
