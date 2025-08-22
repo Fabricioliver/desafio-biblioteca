@@ -1,56 +1,76 @@
-using Biblioteca.Application.DTOs;
-using Biblioteca.Application.Mapping;
-using Biblioteca.Infrastructure.Data;
-using FluentValidation;
-using FluentValidation.AspNetCore;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Hosting;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
-
-builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
-
-builder.Services.AddValidatorsFromAssemblyContaining<GeneroDto>();
-builder.Services.AddFluentValidationAutoValidation();
-
+// Controllers
 builder.Services.AddControllers();
 
-builder.Services.AddApiVersioning(o =>
-{
-    o.DefaultApiVersion = new ApiVersion(1, 0);
-    o.AssumeDefaultVersionWhenUnspecified = true;
-    o.ReportApiVersions = true;
-});
-builder.Services.AddVersionedApiExplorer(setup =>
-{
-    setup.GroupNameFormat = "'v'VVV";          // "v1", "v1.0"
-    setup.SubstituteApiVersionInUrl = true;    // usa {version:apiVersion} na rota
-});
+// OpenAPI
+builder.Services.AddOpenApi();
 
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// ---------------- (Opcional) CORS para o Angular local ----------------
-builder.Services.AddCors(opt =>
+// CORS só no dev (Angular dev server)
+builder.Services.AddCors(options =>
 {
-    opt.AddPolicy("frontend",
-        p => p.WithOrigins("http://localhost:4200")
+    options.AddPolicy("DevCors", policy =>
+        policy.WithOrigins(
+                "http://localhost:4200",
+                "https://localhost:4200",
+                "http://127.0.0.1:4200")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+// --- DEV: sem HTTPS redirect, com CORS e OpenAPI ---
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.UseCors("DevCors");
+}
+else
+{
+    // --- PRODUÇÃO: HTTPS + SPA estática (se houver wwwroot) ---
+    app.UseHttpsRedirection();
 
-// (Opcional) habilita CORS
-app.UseCors("frontend");
+    var webRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+    if (Directory.Exists(webRoot))
+    {
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
+    }
+}
 
 app.MapControllers();
 
+// exemplo minimal (mantive)
+var summaries = new[]
+{
+    "Freezing","Bracing","Chilly","Cool","Mild","Warm","Balmy","Hot","Sweltering","Scorching"
+};
+app.MapGet("/api/weatherforecast", () =>
+{
+    var forecast = Enumerable.Range(1, 5).Select(index =>
+        new WeatherForecast(
+            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+            Random.Shared.Next(-20, 55),
+            summaries[Random.Shared.Next(summaries.Length)]
+        )).ToArray();
+    return forecast;
+})
+.WithName("GetWeatherForecast");
+
+// Fallback da SPA só em produção e se wwwroot existir
+if (!app.Environment.IsDevelopment() && Directory.Exists(Path.Combine(app.Environment.ContentRootPath, "wwwroot")))
+{
+    app.MapFallbackToFile("index.html");
+}
+
 app.Run();
+
+record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+{
+    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+}
