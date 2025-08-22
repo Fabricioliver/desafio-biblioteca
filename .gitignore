@@ -434,3 +434,18 @@ coverage/
 **/pgdata/
 **/docker-data/
 /EliminaDocker-CUIDADO.bat
+
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# Angular
+frontend/**/dist/
+frontend/**/.angular/
+frontend/**/node_modules/
+
+# SPA build (publicado pelo .csproj)
+backend/src/Biblioteca.Api/wwwroot/
+!backend/src/Biblioteca.Api/wwwroot/.gitkeep
