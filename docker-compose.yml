@@ -1,29 +1,20 @@
 services:
   db:
     image: postgres:16
-    container_name: biblioteca_desafio
+    container_name: biblioteca-db
     environment:
-      POSTGRES_USER: biblioteca
-      POSTGRES_PASSWORD: biblioteca2025
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: biblioteca
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-  api:
-    build: ./backend/src/Biblioteca.Api
-    container_name: api_desafio
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Default: Host=db;Port=5432;Database=biblioteca;Username=biblioteca;Password=biblioteca2025
-    ports:
-      - "8080:8080"
-    depends_on: [db]
-  web:
-    build: ./frontend/biblioteca-app
-    container_name: desafio_web
-    ports:
-      - "4200:80"
-    depends_on: [api]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d biblioteca"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 volumes:
   pgdata:

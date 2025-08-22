@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Biblioteca.Domain.Common;
 using Biblioteca.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Biblioteca.Infrastructure.Data;
 
@@ -11,66 +12,46 @@ public class AppDbContext : DbContext
 
     public AppDbContext(DbContextOptions<AppDbContext> opt) : base(opt) { }
 
-    protected override void OnModelCreating(ModelBuilder b)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        b.Entity<Genero>(e =>
+        base.OnModelCreating(modelBuilder);
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            e.ToTable("generos");
-            e.HasKey(x => x.Id);
+            if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                modelBuilder.Entity(entityType.ClrType)
+                    .Property(nameof(BaseEntity.CreatedAt))
+                    .HasDefaultValueSql("timezone('utc', now())")
+                    .ValueGeneratedOnAdd();
 
-            e.Property(x => x.Nome)
-                .IsRequired()
-                .HasMaxLength(100);
+                modelBuilder.Entity(entityType.ClrType)
+                    .Property(nameof(BaseEntity.UpdatedAt))
+                    .HasDefaultValueSql("timezone('utc', now())")
+                    .ValueGeneratedOnAddOrUpdate();
+            }
+        }
 
-            e.HasIndex(x => x.Nome).IsUnique();
-        });
+        // Seeds com valores fixos
+        modelBuilder.Entity<Genero>().HasData(
+            new { Id = 1, Nome = "Ficção" },
+            new { Id = 2, Nome = "Tecnologia" }
+        );
 
-        b.Entity<Autor>(e =>
-        {
-            e.ToTable("autores");
-            e.HasKey(x => x.Id);
+        modelBuilder.Entity<Autor>().HasData(
+            new { Id = 1, Nome = "Autor Exemplo" }
+        );
 
-            e.Property(x => x.Nome)
-                .IsRequired()
-                .HasMaxLength(150);
-
-            e.HasIndex(x => x.Nome).IsUnique();
-        });
-
-        b.Entity<Livro>(e =>
-        {
-            e.ToTable("livros");
-            e.HasKey(x => x.Id);
-
-            e.Property(x => x.Titulo)
-                .IsRequired()
-                .HasMaxLength(200);
-
-            e.Property(x => x.AutorId).IsRequired();
-            e.Property(x => x.GeneroId).IsRequired();
-
-            e.HasOne(x => x.Autor)
-                .WithMany(a => a.Livros)
-                .HasForeignKey(x => x.AutorId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            e.HasOne(x => x.Genero)
-                .WithMany(g => g.Livros)
-                .HasForeignKey(x => x.GeneroId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            e.HasIndex(x => x.Titulo);
-        });
-
-        b.Entity<Genero>().HasData(new { Id = 1, Nome = "Ficção" });
-        b.Entity<Autor>().HasData(new { Id = 1, Nome = "Autor Exemplo" });
-        b.Entity<Livro>().HasData(new
-        {
-            Id = 1,
-            Titulo = "Livro Demo",
-            AutorId = 1,
-            GeneroId = 1,
-            Publicacao = DateTime.UtcNow
-        });
+        modelBuilder.Entity<Livro>().HasData(
+            new
+            {
+                Id = 1,
+                Titulo = "Livro Demo",
+                AutorId = 1,
+                GeneroId = 1,
+                Publicacao = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            }
+        );
     }
+
 }
