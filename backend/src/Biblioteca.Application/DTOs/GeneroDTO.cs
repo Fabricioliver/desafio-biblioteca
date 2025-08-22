@@ -1,28 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace Biblioteca.Application.DTOs;
 
-namespace Biblioteca.Application.DTOs
+public record GeneroDto
 {
-    namespace Biblioteca.Application.DTOs
-    {
-        public class GeneroDto
-        {
-            public int Id { get; set; }
-            public string Nome { get; set; } = string.Empty;
-        }
+    public int Id { get; init; }
+    public string Nome { get; init; } = string.Empty;
+}
 
-        public class CreateGeneroDto
-        {
-            public string Nome { get; set; } = string.Empty;
-        }
+public record CreateGeneroDto
+{
+    public string Nome { get; init; } = string.Empty;
+}
 
-        public class UpdateGeneroDto
-        {
-            public string Nome { get; set; } = string.Empty;
-        }
-    }
-
+public record UpdateGeneroDto
+{
+    public string Nome { get; init; } = string.Empty;
 }
