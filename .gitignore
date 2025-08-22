@@ -433,3 +433,4 @@ coverage/
 # =========================================
 **/pgdata/
 **/docker-data/
+/EliminaDocker-CUIDADO.bat
