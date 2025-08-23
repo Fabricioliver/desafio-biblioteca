@@ -9,5 +9,6 @@ public class Livro : BaseEntity
     public Autor Autor { get; set; } = default!;
     public int GeneroId { get; set; }
     public Genero Genero { get; set; } = default!;
-    public DateTime Publicacao { get; set; }
+    public DateTime? Publicacao { get; set; }
+
 }
