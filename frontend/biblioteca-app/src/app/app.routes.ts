@@ -1,12 +1,11 @@
 import { Routes } from '@angular/router';
 import { GenerosPage } from './pages/generos.page';
-import { AutoresPage } from './pages/autores.page';
 import { LivrosPage } from './pages/livros.page';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'generos' },
+  { path: '', pathMatch: 'full', redirectTo: 'autores' },
+  { path: 'autores', loadComponent: () => import('./pages/autores.page').then(m => m.default) },
   { path: 'generos', component: GenerosPage },
-  { path: 'autores', component: AutoresPage },
   { path: 'livros', component: LivrosPage },
-  { path: '**', redirectTo: 'generos' },
+  { path: '**', redirectTo: 'autores' },
 ];
