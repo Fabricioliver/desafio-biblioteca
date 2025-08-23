@@ -15,6 +15,11 @@ public class LivrosController : ControllerBase
     private readonly AppDbContext _db;
     private readonly IMapper _mapper;
 
+    // helper
+    private static DateTime? ToUtc(DateTime? dt) =>
+        dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : null;
+
+
     public LivrosController(AppDbContext db, IMapper mapper)
     {
         _db = db;
@@ -60,7 +65,7 @@ public class LivrosController : ControllerBase
             Titulo = dto.Titulo,
             AutorId = dto.AutorId,
             GeneroId = dto.GeneroId,
-            Publicacao = dto.Publicacao
+            Publicacao = ToUtc(dto.Publicacao)
         };
 
         _db.Add(entity);
@@ -89,7 +94,7 @@ public class LivrosController : ControllerBase
         entity.Titulo = dto.Titulo;
         entity.AutorId = dto.AutorId;
         entity.GeneroId = dto.GeneroId;
-        entity.Publicacao = dto.Publicacao;
+        entity.Publicacao = ToUtc(dto.Publicacao);
 
         await _db.SaveChangesAsync();
         return NoContent();
