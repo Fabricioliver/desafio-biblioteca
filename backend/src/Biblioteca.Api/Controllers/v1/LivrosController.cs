@@ -14,6 +14,9 @@ public class LivrosController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly IMapper _mapper;
+    private static DateTime? ToUtc(DateTime? dt) =>
+        dt.HasValue ? DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc) : (DateTime?)null;
+
 
     // helper
     private static DateTime? ToUtc(DateTime? dt) =>
