@@ -24,8 +24,11 @@ Opcional (dev):
 
 ## Estrutura do projeto
 
+<<<<<<< HEAD
 > Branch **main**
 
+=======
+>>>>>>> a516a31 (Update README.md)
 ```
 desafio-biblioteca/
 ├─ backend/
@@ -132,7 +135,11 @@ dotnet Biblioteca.Api.dll
 
 ---
 
+<<<<<<< HEAD
 ## OpenAPI / Swagger
+=======
+## 📜 OpenAPI / Swagger
+>>>>>>> a516a31 (Update README.md)
 
 - Em **dev**, a API expõe o documento **OpenAPI** em:  
   `GET /openapi/v1.json` (ou `/openapi` dependendo da configuração).
@@ -149,7 +156,11 @@ dotnet Biblioteca.Api.dll
 
 ---
 
+<<<<<<< HEAD
 ## Testes
+=======
+## 🧩 Testes
+>>>>>>> a516a31 (Update README.md)
 
 Projeto: `backend/tests/Biblioteca.Tests` (xUnit).
 
@@ -238,7 +249,11 @@ Inclua `xunit` e `Microsoft.NET.Test.Sdk` no projeto de testes e `using Xunit;` 
 
 ---
 
+<<<<<<< HEAD
 ## CI/CD
+=======
+## CI/CD (dica)
+>>>>>>> a516a31 (Update README.md)
 
 - Job **API**: `dotnet publish -c Release` → publicar a pasta `publish/`.
 - Job **Infra** (opcional): provisiona banco.
