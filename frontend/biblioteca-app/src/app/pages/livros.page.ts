@@ -2,126 +2,118 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LivrosService } from '../services/livros.service';
-import { GenerosService } from '../services/generos.service';
-import { AutoresService } from '../services/autores.service';
-import { Livro } from '../models/livro';
-import { Autor } from '../models/autor';
-import { Genero } from '../models/genero';
+import { Livro, CreateLivro } from '../models/livro';
 
 @Component({
   standalone: true,
-  selector: 'app-livros-page',
+  selector: 'app-livros',
   imports: [CommonModule, FormsModule],
   template: `
-  <section class="card">
+  <section style="max-width:960px;margin:2rem auto;padding:1rem">
     <h2>Livros</h2>
 
-    <form (ngSubmit)="save()" class="grid">
-      <input [(ngModel)]="titulo" name="titulo" placeholder="Título" required/>
-      <select [(ngModel)]="autorId" name="autorId" required>
-        <option value="" disabled selected>Autor...</option>
-        <option *ngFor="let a of autores()" [ngValue]="a.id">{{ a.nome }}</option>
-      </select>
-      <select [(ngModel)]="generoId" name="generoId" required>
-        <option value="" disabled selected>Gênero...</option>
-        <option *ngFor="let g of generos()" [ngValue]="g.id">{{ g.nome }}</option>
-      </select>
-      <input [(ngModel)]="publicacao" name="publicacao" type="date" required/>
-      <div class="row">
-        <button type="submit">{{ editId ? 'Salvar' : 'Adicionar' }}</button>
-        <button type="button" class="ghost" *ngIf="editId" (click)="cancel()">Cancelar</button>
-      </div>
+    <form (ngSubmit)="save()" style="display:grid;grid-template-columns:1fr 140px 140px 180px auto auto;gap:.5rem;margin:.75rem 0;align-items:center">
+      <input [(ngModel)]="titulo" name="titulo" required placeholder="Título" style="padding:.5rem;border:1px solid #ccc;border-radius:6px;" />
+      <input [(ngModel)]="autorId" name="autorId" type="number" placeholder="AutorId" style="padding:.5rem;border:1px solid #ccc;border-radius:6px;" />
+      <input [(ngModel)]="generoId" name="generoId" type="number" placeholder="GeneroId" style="padding:.5rem;border:1px solid #ccc;border-radius:6px;" />
+      <input [(ngModel)]="publicacao" name="publicacao" type="date" placeholder="Publicação" style="padding:.5rem;border:1px solid #ccc;border-radius:6px;" />
+      <button class="btn">{{ editId === null ? 'Adicionar' : 'Atualizar' }}</button>
+      <button type="button" class="btn-outline" *ngIf="editId !== null" (click)="cancel()">Cancelar</button>
     </form>
 
-    <table>
+    <table *ngIf="livros().length; else vazio" style="width:100%;border-collapse:collapse">
       <thead>
-        <tr><th>Título</th><th>Autor</th><th>Gênero</th><th>Publicação</th><th style="width:160px">Ações</th></tr>
+        <tr>
+          <th style="text-align:left;padding:.5rem;border-bottom:1px solid #eee">Título</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:1px solid #eee">Autor</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:1px solid #eee">Gênero</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:1px solid #eee">Publicação</th>
+          <th style="width:160px;padding:.5rem;border-bottom:1px solid #eee">Ações</th>
+        </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let l of livros()">
-          <td>{{ l.titulo }}</td>
-          <td>{{ l.autorNome }}</td>
-          <td>{{ l.generoNome }}</td>
-          <td>{{ l.publicacao | date:'yyyy-MM-dd' }}</td>
-          <td class="actions">
-            <button (click)="startEdit(l)">Editar</button>
-            <button class="danger" (click)="remove(l.id)">Excluir</button>
+        <tr *ngFor="let l of livros(); trackBy: trackId">
+          <td style="padding:.5rem;border-bottom:1px solid #f3f3f3">{{ l.titulo }}</td>
+          <td style="padding:.5rem;border-bottom:1px solid #f3f3f3">{{ l.autorNome || l.autorId || '-' }}</td>
+          <td style="padding:.5rem;border-bottom:1px solid #f3f3f3">{{ l.generoNome || l.generoId || '-' }}</td>
+          <td style="padding:.5rem;border-bottom:1px solid #f3f3f3">{{ l.publicacao ? (l.publicacao | date:'yyyy-MM-dd') : '-' }}</td>
+          <td style="padding:.5rem;border-bottom:1px solid #f3f3f3">
+            <button class="btn-sm" (click)="startEdit(l)">Editar</button>
+            <button class="btn-sm" (click)="remove(l.id)">Excluir</button>
           </td>
         </tr>
       </tbody>
     </table>
+    <ng-template #vazio><div style="color:#777">Nenhum livro ainda.</div></ng-template>
   </section>
-  `,
-  styles: [`
-    .card{max-width:1100px;margin:auto;padding:16px;border:1px solid #eee;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.04);}
-    h2{margin-top:0}
-    .grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:12px}
-    .row{display:flex;gap:8px}
-    input, select{padding:10px;border:1px solid #ddd;border-radius:8px;width:100%}
-    button{padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:#111;color:#fff;border-color:#111}
-    button.ghost{background:#fff;color:#111}
-    button.danger{background:#b3261e;border-color:#b3261e}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid #eee}
-    .actions{display:flex;gap:8px}
-  `]
+  `
 })
-export class LivrosPage implements OnInit {
+export default class LivrosPage implements OnInit {
   livros = signal<Livro[]>([]);
-  autores = signal<Autor[]>([]);
-  generos = signal<Genero[]>([]);
 
   titulo = '';
-  autorId: number | '' = '';
-  generoId: number | '' = '';
-  publicacao = '';
+  autorId: number | null = null;
+  generoId: number | null = null;
+  publicacao: string = ''; // yyyy-MM-dd
+
   editId: number | null = null;
 
-  constructor(
-    private livrosApi: LivrosService,
-    private autoresApi: AutoresService,
-    private generosApi: GenerosService,
-  ) {}
+  constructor(private api: LivrosService) {}
 
-  ngOnInit(){ this.load(); }
-  load(){
-    this.livrosApi.list().subscribe(d => this.livros.set(d));
-    this.autoresApi.list().subscribe(d => this.autores.set(d));
-    this.generosApi.list().subscribe(d => this.generos.set(d));
+  ngOnInit(): void { this.load(); }
+
+  load(): void {
+    this.api.list().subscribe({
+      next: (d: Livro[]) => this.livros.set(d),
+      error: (err: unknown) => console.error('Erro list()', err)
+    });
   }
 
-  save(){
-    if(!this.titulo.trim() || !this.autorId || !this.generoId || !this.publicacao) return;
-    const dto = {
-      titulo: this.titulo,
-      autorId: Number(this.autorId),
-      generoId: Number(this.generoId),
-      publicacao: new Date(this.publicacao).toISOString()
-    };
-    const done = () => { this.cancel(); this.load(); };
+  save(): void {
+    const t = this.titulo.trim();
+    if (!t) return;
 
-    if(this.editId){
-      this.livrosApi.update(this.editId, dto).subscribe(done);
-    }else{
-      this.livrosApi.create(dto).subscribe(done);
+    const payload: CreateLivro = { titulo: t };
+    if (this.autorId != null) payload.autorId = this.autorId;
+    if (this.generoId != null) payload.generoId = this.generoId;
+    if (this.publicacao) payload.publicacao = this.publicacao;
+
+    if (this.editId == null) {
+      this.api.create(payload).subscribe({
+        next: () => { this.cancel(); this.load(); },
+        error: (err: unknown) => console.error('Erro create()', err)
+      });
+    } else {
+      this.api.update(this.editId, payload).subscribe({
+        next: () => { this.cancel(); this.load(); },
+        error: (err: unknown) => console.error('Erro update()', err)
+      });
     }
   }
 
-  startEdit(l: Livro){
+  startEdit(l: Livro): void {
     this.editId = l.id;
-    this.titulo = l.titulo;
-    this.autorId = l.autorId;
-    this.generoId = l.generoId;
-    this.publicacao = l.publicacao?.substring(0,10) ?? '';
+    this.titulo = l.titulo ?? '';
+    this.autorId = l.autorId ?? null;
+    this.generoId = l.generoId ?? null;
+    this.publicacao = l.publicacao ? l.publicacao.substring(0,10) : '';
   }
 
-  cancel(){
+  cancel(): void {
     this.editId = null;
     this.titulo = '';
-    this.autorId = '';
-    this.generoId = '';
+    this.autorId = null;
+    this.generoId = null;
     this.publicacao = '';
   }
 
-  remove(id: number){ this.livrosApi.delete(id).subscribe(() => this.load()); }
+  remove(id: number): void {
+    if (!confirm('Excluir livro?')) return;
+    this.api.remove(id).subscribe({
+      next: () => this.load(),
+      error: (err: unknown) => console.error('Erro remove()', err)
+    });
+  }
+
+  trackId = (_: number, it: Livro) => it.id;
 }
