@@ -238,7 +238,7 @@ Inclua `xunit` e `Microsoft.NET.Test.Sdk` no projeto de testes e `using Xunit;` 
 
 ---
 
-## CI/CD (dica)
+## CI/CD
 
 - Job **API**: `dotnet publish -c Release` → publicar a pasta `publish/`.
 - Job **Infra** (opcional): provisiona banco.
