@@ -132,7 +132,7 @@ dotnet Biblioteca.Api.dll
 
 ---
 
-## 📜 OpenAPI / Swagger
+## OpenAPI / Swagger
 
 - Em **dev**, a API expõe o documento **OpenAPI** em:  
   `GET /openapi/v1.json` (ou `/openapi` dependendo da configuração).
@@ -149,7 +149,7 @@ dotnet Biblioteca.Api.dll
 
 ---
 
-## 🧩 Testes
+## Testes
 
 Projeto: `backend/tests/Biblioteca.Tests` (xUnit).
 
