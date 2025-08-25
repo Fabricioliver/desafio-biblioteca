@@ -1,37 +1,31 @@
+// src/app/services/autores.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+
 import { environment } from '../../environments/environment';
-import { Autor, CreateAutor } from '../models/autor';
+import { Autor, AutorUpsert } from '../models/autor';
 
 @Injectable({ providedIn: 'root' })
 export class AutoresService {
-  private readonly base = `${environment.api}/autores`;
+  private readonly apiRoot = `${environment.apiBase}/${environment.apiVersion}`;
+  private readonly baseUrl = `${this.apiRoot}/autores`;
 
   constructor(private http: HttpClient) {}
 
   list(): Observable<Autor[]> {
-    return this.http.get<Autor[]>(this.base);
+    return this.http.get<Autor[]>(this.baseUrl);
   }
 
-  get(id: number): Observable<Autor> {
-    return this.http.get<Autor>(`${this.base}/${id}`);
+  create(dto: AutorUpsert): Observable<Autor> {
+    return this.http.post<Autor>(this.baseUrl, dto);
   }
 
-  create(dto: CreateAutor): Observable<Autor> {
-    return this.http.post<Autor>(this.base, dto);
-  }
-
-  update(id: number, dto: CreateAutor): Observable<void> {
-    return this.http.put<void>(`${this.base}/${id}`, dto);
+  update(id: number, dto: AutorUpsert): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/${id}`, dto);
   }
 
   remove(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/${id}`);
-  }
-
-  // Alias compatível com código antigo que chamava delete():
-  delete(id: number): Observable<void> {
-    return this.remove(id);
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

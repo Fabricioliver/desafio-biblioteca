@@ -4,6 +4,7 @@ using Biblioteca.Domain.Entities;
 using Biblioteca.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Asp.Versioning;
 
 namespace Biblioteca.Api.Controllers.v1;
 

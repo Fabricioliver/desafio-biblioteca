@@ -1,115 +1,120 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Hosting;
-using System.IO;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Versioning;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
+using AutoMapper;
+using Biblioteca.Infrastructure.Data; // seu DbContext
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers
+// -------------------------
+// Connection string
+// -------------------------
+var connStr =
+    builder.Configuration["ConnectionStrings__Default"] // preferência para var de ambiente (Docker/CI)
+    ?? builder.Configuration["ConnectionStrings:Default"]
+    ?? builder.Configuration.GetConnectionString("Default")
+    ?? "Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=biblioteca;SSL Mode=Disable;Trust Server Certificate=true";
+
+builder.Services.AddDbContext<AppDbContext>(opt =>
+{
+    opt.UseNpgsql(connStr);
+});
+
+// -------------------------
+// MVC / Controllers
+// -------------------------
 builder.Services.AddControllers();
 
-// OpenAPI (pode manter se quiser o MapOpenApi no dev)
-builder.Services.AddOpenApi();
+// -------------------------
+// AutoMapper
+// -------------------------
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// CORS só no dev (Angular dev server)
-builder.Services.AddCors(options =>
+// -------------------------
+// FluentValidation
+// -------------------------
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssembly(Assembly.Load("Biblioteca.Application"));
+
+// -------------------------
+// API Versioning + Explorer (gera grupos v1, v2...)
+// -------------------------
+builder.Services
+    .AddApiVersioning(opt =>
+    {
+        opt.DefaultApiVersion = new ApiVersion(1, 0);
+        opt.AssumeDefaultVersionWhenUnspecified = true;
+        opt.ReportApiVersions = true;
+        opt.ApiVersionReader = new UrlSegmentApiVersionReader(); // usa /v{version} na rota
+    })
+    .AddApiExplorer(opt =>
+    {
+        opt.GroupNameFormat = "'v'VVV";           // v1, v2, v3
+        opt.SubstituteApiVersionInUrl = true;
+    });
+
+// -------------------------
+// Swagger (sem BuildServiceProvider aqui!)
+// -------------------------
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
 {
-    options.AddPolicy("DevCors", policy =>
-        policy.WithOrigins(
-                "http://localhost:4200",
-                "https://localhost:4200",
-                "http://127.0.0.1:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+    // Doc default para funcionar mesmo sem vários grupos
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Biblioteca API",
+        Version = "v1"
+    });
 });
 
-// ===== API Versioning =====
-builder.Services.AddApiVersioning(opt =>
-{
-    opt.DefaultApiVersion = new ApiVersion(1, 0);
-    opt.AssumeDefaultVersionWhenUnspecified = true;
-    opt.ReportApiVersions = true;
-
-    // Lê a versão por segmento de URL, querystring e header
-    opt.ApiVersionReader = ApiVersionReader.Combine(
-        new UrlSegmentApiVersionReader(),
-        new QueryStringApiVersionReader("v", "api-version"),
-        new HeaderApiVersionReader("x-api-version")
-    );
-});
-
-// Exploração por versão (para Swagger por versão)
-builder.Services.AddVersionedApiExplorer(opt =>
-{
-    opt.GroupNameFormat = "'v'VVV";
-    opt.SubstituteApiVersionInUrl = true;
-});
-
-// Swagger (UI)
-builder.Services.AddSwaggerGen();
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 var app = builder.Build();
 
-// --- DEV ---
+// -------------------------
+// Migrations automáticas (opcional)
+// -------------------------
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
+// -------------------------
+// Pipeline
+// -------------------------
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();       // opcional, tua OpenAPI minimal
+    app.UseDeveloperExceptionPage();
+
+    // Ativa Swagger e descobre versões via DI **depois** do Build:
     app.UseSwagger();
+
+    var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
     app.UseSwaggerUI(c =>
     {
-        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        // Se houver múltiplas versões, cria uma aba por versão; senão, fica só v1
         foreach (var desc in provider.ApiVersionDescriptions)
-            c.SwaggerEndpoint($"/swagger/{desc.GroupName}/swagger.json", desc.GroupName.ToUpperInvariant());
+        {
+            c.SwaggerEndpoint($"/swagger/{desc.GroupName}/swagger.json",
+                $"Biblioteca API {desc.ApiVersion}");
+        }
     });
-
-    app.UseCors("DevCors");
-}
-else
-{
-    // --- PRODUÇÃO: HTTPS + SPA estática (se houver wwwroot) ---
-    app.UseHttpsRedirection();
-
-    var webRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
-    if (Directory.Exists(webRoot))
-    {
-        app.UseDefaultFiles();
-        app.UseStaticFiles();
-    }
-
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
+app.UseAuthorization();
 app.MapControllers();
 
-// (opcional) exemplo minimal que você já tinha
-var summaries = new[]
-{
-    "Freezing","Bracing","Chilly","Cool","Mild","Warm","Balmy","Hot","Sweltering","Scorching"
-};
-app.MapGet("/api/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast(
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        )).ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
-
-// Fallback da SPA só em produção e se wwwroot existir
-if (!app.Environment.IsDevelopment() && Directory.Exists(Path.Combine(app.Environment.ContentRootPath, "wwwroot")))
-{
-    app.MapFallbackToFile("index.html");
-}
+// -------------------------
+// Porta padrão p/ Docker/Cloud
+// -------------------------
+var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+if (string.IsNullOrWhiteSpace(urls))
+    app.Urls.Add("http://0.0.0.0:8080");
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

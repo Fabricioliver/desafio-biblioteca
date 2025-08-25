@@ -1,22 +1,20 @@
 export interface Livro {
   id: number;
   titulo: string;
-  autorId?: number | null;
-  generoId?: number | null;
-  ano?: number | null;
-
-  // Campos opcionais retornados pela API (se houver projeções/joins)
-  autorNome?: string | null;
-  generoNome?: string | null;
-
-  // Data de publicação em ISO (yyyy-MM-dd ou yyyy-MM-ddTHH:mm:ss)
+  autorId: number;
+  generoId: number;
   publicacao?: string | null;
+  autorNome?: string;
+  generoNome?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface CreateLivro {
+export type LivroUpsert = {
   titulo: string;
-  autorId?: number | null;
-  generoId?: number | null;
-  ano?: number | null;
+  autorId: number;
+  generoId: number;
   publicacao?: string | null;
-}
+};
+
+export type CreateLivro = LivroUpsert;

@@ -1,41 +1,34 @@
-# 1) Build do front (Angular)
+# 1) Build do front
 FROM node:20-alpine AS web
 WORKDIR /front
+# Copia apenas manifests primeiro para cache melhor
 COPY frontend/biblioteca-app/package*.json ./
-# usa ci se existir lock, senão cai no install (mais resiliente)
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
-COPY frontend/biblioteca-app .
+RUN npm ci
+# Copia o restante e builda
+COPY frontend/biblioteca-app/ ./
 RUN npm run build
 
-# 2) Build do backend + embute a SPA no wwwroot
+# 2) Build/publish da API (.NET 9 SDK)
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# IMPORTANTE: copie o centralizador de versões ANTES do restore
-COPY Directory.Packages.props ./
-
-# copie só os .csproj primeiro para cachear o restore
-COPY backend/src/Biblioteca.Api/Biblioteca.Api.csproj backend/src/Biblioteca.Api/
-COPY backend/src/Biblioteca.Application/Biblioteca.Application.csproj backend/src/Biblioteca.Application/
-COPY backend/src/Biblioteca.Domain/Biblioteca.Domain.csproj backend/src/Biblioteca.Domain/
-COPY backend/src/Biblioteca.Infrastructure/Biblioteca.Infrastructure.csproj backend/src/Biblioteca.Infrastructure/
-COPY backend/tests/Biblioteca.Tests/Biblioteca.Tests.csproj backend/tests/Biblioteca.Tests/
-
-# faça o restore com o props presente
-RUN dotnet restore backend/src/Biblioteca.Api/Biblioteca.Api.csproj
-
-# agora copie o resto do código
+# Copia solução/back-end
 COPY backend/ ./backend/
 
-# coloque a SPA compilada dentro do wwwroot
+# Copia artefatos do front para a pasta estática da API
+RUN mkdir -p backend/src/Biblioteca.Api/wwwroot/browser
 COPY --from=web /front/dist/biblioteca-app/browser ./backend/src/Biblioteca.Api/wwwroot/browser
 
+# Restaura, compila e publica
+RUN dotnet restore backend/src/Biblioteca.Api/Biblioteca.Api.csproj
 RUN dotnet publish backend/src/Biblioteca.Api/Biblioteca.Api.csproj -c Release -o /app/publish
 
-# 3) Runtime
+# 3) Runtime (.NET 9 ASPNET)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
-COPY --from=build /app/publish .
+# Porta HTTP padrão para o container
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 EXPOSE 8080
-ENTRYPOINT ["dotnet","Biblioteca.Api.dll"]
+
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "Biblioteca.Api.dll"]

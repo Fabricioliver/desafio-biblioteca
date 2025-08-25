@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
+    container_name: biblioteca-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -9,16 +10,30 @@ services:
       - "5432:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d biblioteca"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   api:
-    build: .
+    container_name: biblioteca-api
+    build:
+      context: .
+      dockerfile: Dockerfile
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      ConnectionStrings__Default: "Host=db;Port=5432;Username=postgres;Password=postgres;Database=biblioteca;SSL Mode=Disable;Trust Server Certificate=true"
       ASPNETCORE_ENVIRONMENT: "Development"
+      # A API lê isso no Program.cs (ConnectionStrings__Default)
+      ConnectionStrings__Default: "Host=db;Port=5432;Username=postgres;Password=postgres;Database=biblioteca;SSL Mode=Disable;Trust Server Certificate=true"
+      # Faz a Kestrel escutar no 0.0.0.0:8080 (o Dockerfile já seta default também)
+      ASPNETCORE_URLS: "http://0.0.0.0:8080"
     ports:
       - "8080:8080"
+    # (Opcional) reiniciar se cair
+    restart: unless-stopped
 
 volumes:
   dbdata:

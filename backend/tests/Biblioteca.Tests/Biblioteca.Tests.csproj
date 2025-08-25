@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
 		<IsPackable>false</IsPackable>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -12,18 +13,15 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="FluentAssertions" />
 		<PackageReference Include="coverlet.collector">
 			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+		<PackageReference Include="FluentAssertions" />
 	</ItemGroup>
 
-	<!-- Se referenciar projetos da solução, mantenha-os aqui -->
-	<!-- <ItemGroup>
-    <ProjectReference Include="..\..\src\Biblioteca.Api\Biblioteca.Api.csproj" />
-  </ItemGroup> -->
-
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Biblioteca.Domain\Biblioteca.Domain.csproj" />
+		<ProjectReference Include="..\..\src\Biblioteca.Application\Biblioteca.Application.csproj" />
+		<ProjectReference Include="..\..\src\Biblioteca.Infrastructure\Biblioteca.Infrastructure.csproj" />
+	</ItemGroup>
 </Project>
-

@@ -1,0 +1,36 @@
+<Project>
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- EF Core 9 + Npgsql -->
+		<PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.8" />
+		<PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8" />
+		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+
+		<!-- Versionamento -->
+		<PackageVersion Include="Asp.Versioning.Mvc" Version="8.1.0" />
+		<PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
+
+		<!-- Swagger -->
+		<PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+
+		<!-- FluentValidation -->
+		<PackageVersion Include="FluentValidation" Version="11.9.2" />
+		<PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.0" />
+
+		<!-- AutoMapper (alinhei ambos em 12.0.1) -->
+		<PackageVersion Include="AutoMapper" Version="12.0.1" />
+		<PackageVersion Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+
+		<!-- Testes -->
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+		<PackageVersion Include="xunit" Version="2.7.1" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="2.8.0" />
+		<PackageVersion Include="FluentAssertions" Version="6.12.0" />
+		<PackageVersion Include="coverlet.collector" Version="6.0.2" />
+	</ItemGroup>
+</Project>
